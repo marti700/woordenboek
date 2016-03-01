@@ -12,5 +12,12 @@ class Crawler
     #in wiktionary the first form is the one where you search for words
     @search = @page.forms.first
   end
-end
 
+  def crawl a_word
+    #sets the value of the search form value property (which name is search)
+    #to the word paset to the method
+    @search.search = a_word
+    #submit the form to get the new Page
+    @page = @search.submit
+  end
+end
