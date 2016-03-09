@@ -16,20 +16,21 @@ class Crawler
   def crawl a_word, with_examples = false
     #gets definitions for the given word
     #The with_examples argument especifies if examples from the
-    #a_page should be extracted too.
+    #@page should be extracted too.
 
     #sets the value of the search form value property (which name is search)
     #to the word paset to the method
     @search.search = a_word
     #submit the form to get the new Page
     @page = @search.submit
-    extract_definitions_from @page, with_examples
+    extract_definitions_from with_examples
   end
 
-  def extract_definitions_from a_page, with_examples = false
-    #Extracts definitions from the given Mechanize::Page object
-    #The with_examples argument especifies if examples from the
-    #a_page should be extracted too.
+  private
+  def extract_definitions_from with_examples = false
+    #Extracts definitions from the @page variable
+    #The with_examples argument especifies if examples from
+    #@page should be extracted too.
 
     word = Hash.new
     definitions = Hash.new
@@ -43,7 +44,7 @@ class Crawler
     #
     #Les Prononciations, Etymologies et les References
     #sont pas besoin dans ce dictionnaire
-    a_page.search("//h3/span[@class='mw-headline']/span[not(contains(.,'Références' )
+    @page.search("//h3/span[@class='mw-headline']/span[not(contains(.,'Références' )
                   or contains(.,'Prononciation') or contains(.,'Symbole')
                   or contains(.,'Étymologie') or contains(.,'Voir aussi')
                   or contains(.,'Anagrammes'))]
@@ -55,8 +56,8 @@ class Crawler
       #selects a different definition li from the <ol> tag as long as the .at
       #method do not return nil(which means there are no more definitions for
       #the current kind) the code inside the while loop will be executed
-      while a_page.at("//ol/li[#{definition_counter}][preceding::span[@id='#{heading.attr('id')}']]") do
-        currently_selected_item = a_page.at("//ol/li[#{definition_counter}][preceding::span[@id = '#{heading.attr('id')}']]")
+      while @page.at("//ol/li[#{definition_counter}][preceding::span[@id='#{heading.attr('id')}']]") do
+        currently_selected_item = @page.at("//ol/li[#{definition_counter}][preceding::span[@id = '#{heading.attr('id')}']]")
         #The li tags from the above xpath query also get the text of the
         #examples of the the definitions. The definitions are separated from
         #the example by one or more new line characters, the /^(.*?)\n/ regex
@@ -83,7 +84,6 @@ class Crawler
     word
   end
 
-  private
   def limit_id
     #All french wiktionary pages have one or more <h2> tag with an span inside
     #the text of this span defines the context in which the word takes meaning
@@ -129,9 +129,28 @@ class Crawler
     end
     examples
   end
+
+  def get_word_gender
+    #Gets a word gender
+    #
+    #Genres are usually in a <p> tag placed right after the kind(Nom, adjectif, etc)
+    #of the word, genders can be also found inside a table with class a named
+    #'flextable-fr-mfsp' but not all the words fits this description il y a
+    #words that just have the table autres just have the <p> tag and peut être
+    #il y a mots qui n'a pas la table ou le <p> tag.
+    #
+    #Alors, this method gets the gender by first looking for the <p> tag if not
+    #<p> tag containing one of the genders text('féminin', 'masculin') then this
+    #method will look for genre in the table.
+    #
+    #Getting the text of the <p> tag
+    p_text = @page.at("//p[preceding::h3/span[contains(.,'nom') or contains(.,'adjectif')
+                      or contains(.,'Nom')]]").text
+    /(masculin|féminin)/.match(p_text)[0]
+  end
 end
 
 
 c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
-p c.crawl 'maison'
+p c.crawl 'beau'
 
