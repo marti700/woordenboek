@@ -24,6 +24,7 @@ class Crawler
     #submit the form to get the new Page
     @page = @search.submit
     extract_definitions_from with_examples
+    #get_word_gender
   end
 
   private
@@ -145,12 +146,25 @@ class Crawler
     #
     #Getting the text of the <p> tag
     p_text = @page.at("//p[preceding::h3/span[contains(.,'nom') or contains(.,'adjectif')
-                      or contains(.,'Nom')]]").text
-    /(masculin|féminin)/.match(p_text)[0]
+                      or contains(.,'Nom') or contains(.,'Adjectif')]]").text
+    gender = /(masculin|féminin)/.match(p_text)
+    return gender[0] if !p_text.nil? && !gender.nil?
+
+    #Getting the gender from the table
+    row = 1
+    #while the element exists
+    while !@page.at("//table[1][@class='flextable flextable-fr-mfsp']/tr[#{row}]").nil? do
+      #see if the word we want to know the gender of match one of the strings in the table
+      if !/\b#{@page.at('//h1').text}\b/.match(@page.at("//table[1][@class='flextable flextable-fr-mfsp']/tr[#{row}]")).nil?
+        #returns the gender of the word which is in a <th> tag
+        return @page.at("//table[1][@class='flextable flextable-fr-mfsp']/tr[#{row}]/th").text
+      end
+      row += 1
+    end
   end
 end
 
 
 c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
-p c.crawl 'beau'
+p c.crawl 'maison'
 
