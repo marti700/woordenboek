@@ -23,12 +23,12 @@ class Crawler
     @search.search = a_word
     #submit the form to get the new Page
     @page = @search.submit
-    extract_definitions_from with_examples
+    extract_definitions_from_page with_examples
     #get_word_gender
   end
 
   private
-  def extract_definitions_from with_examples = false
+  def extract_definitions_from_page with_examples = false
     #Extracts definitions from the @page variable
     #The with_examples argument especifies if examples from
     #@page should be extracted too.
@@ -38,18 +38,7 @@ class Crawler
     examples = Hash.new
     definition_counter = 1
 
-    #the xpath query that is passed to the search method says the following:
-    #get all the h3 with a span with a class named mw-headline as children
-    #that has a span that do not contains the word References, Prononciation
-    #and Etymologie.
-    #
-    #Les Prononciations, Etymologies et les References
-    #sont pas besoin dans ce dictionnaire
-    @page.search("//h3/span[@class='mw-headline']/span[not(contains(.,'Références' )
-                  or contains(.,'Prononciation') or contains(.,'Symbole')
-                  or contains(.,'Étymologie') or contains(.,'Voir aussi')
-                  or contains(.,'Anagrammes'))]
-                  [not(preceding::h2/span[@id = '#{limit_id}'])]").each do |heading|
+    valid_kind_headers.each do |heading|
 
       #the argument of the .at method is an xpath that queries for an specific
       #definition li of an ol(all definitions all between <ol> tags) each
@@ -110,6 +99,24 @@ class Crawler
     end
   end
 
+  def valid_kind_headers
+    #returns an array of the valid kind headers
+    #
+    #the xpath query that is passed to the search method says the following:
+    #get all the h3 with a span with a class named mw-headline as children
+    #that has a span that do not contains the word References, Prononciation
+    #and Etymologie.
+    #
+    #Les Prononciations, Etymologies et les References
+    #sont pas besoin dans ce dictionnaire
+
+    @page.search("//h3/span[@class='mw-headline']/span[not(contains(.,'Références' )
+                  or contains(.,'Prononciation') or contains(.,'Symbole')
+                  or contains(.,'Étymologie') or contains(.,'Voir aussi')
+                  or contains(.,'Anagrammes'))]
+                  [not(preceding::h2/span[@id = '#{limit_id}'])]")
+  end
+
   def extract_examples_from current_li_element
     #Extracs definition from a provided Nokogiri::XML::Element which is a <li>
     #and return an Array of all the examples that are within the provided
@@ -132,7 +139,8 @@ class Crawler
   end
 
   def get_word_gender
-    #Gets a word gender
+    #returns a hash with the kind of the word as key and the word gender as value
+    #e.x. => {"adjectif_démonstratif"=>"Masculin", "pronom_démonstratif"=>"invariable", "nom_commun"=>"féminin"}
     #
     #Genres are usually in a <p> tag placed right after the kind(Nom, adjectif, etc)
     #of the word, genders can be also found inside a table with class a named
@@ -143,28 +151,39 @@ class Crawler
     #Alors, this method gets the gender by first looking for the <p> tag if not
     #<p> tag containing one of the genders text('féminin', 'masculin') then this
     #method will look for genre in the table.
-    #
-    #Getting the text of the <p> tag
-    p_text = @page.at("//p[preceding::h3/span[contains(.,'nom') or contains(.,'adjectif')
-                      or contains(.,'Nom') or contains(.,'Adjectif')]]").text
-    gender = /(masculin|féminin)/.match(p_text)
-    return gender[0] if !p_text.nil? && !gender.nil?
 
-    #Getting the gender from the table
-    row = 1
-    #while the element exists
-    while !@page.at("//table[1][@class='flextable flextable-fr-mfsp']/tr[#{row}]").nil? do
-      #see if the word we want to know the gender of match one of the strings in the table
-      if !/\b#{@page.at('//h1').text}\b/.match(@page.at("//table[1][@class='flextable flextable-fr-mfsp']/tr[#{row}]")).nil?
-        #returns the gender of the word which is in a <th> tag
-        return @page.at("//table[1][@class='flextable flextable-fr-mfsp']/tr[#{row}]/th").text
+    gender_kind = Hash.new
+    valid_kind_headers.each do |heading|
+      #Getting the text of the <p> tag
+      p_text = @page.at("//p[preceding::h3/span[contains(.,'nom') or contains(.,'adjectif')
+                        or contains(.,'Nom') or contains(.,'Adjectif')]
+                        and preceding::span[@id='#{heading.attr('id')}']]")
+      gender = /(masculin|féminin)/.match(p_text)
+      p gender
+      if !p_text.nil? && !gender.nil?
+        gender_kind[heading.text.downcase.gsub(' ', '_')] = gender[0]
+        next #no need to search the table if the gender was taken from the <p> tag
       end
-      row += 1
+
+      #Getting the gender from the table
+      row = 1
+      #while the element exists
+      while !@page.at("//table[@class='flextable flextable-fr-mfsp']/tr[#{row}]").nil? do
+        #see if the word we want to know the gender of match one of the strings in the table
+        if !/\b#{@page.at('//h1').text}\b/.match(@page.at("//table[@class='flextable flextable-fr-mfsp']/tr[#{row}][preceding::span[@id='fr-adj-d.C3.A9m']]")).nil?
+          #returns the gender of the word which is in a <th> tag
+          gender = @page.at("//table[@class='flextable flextable-fr-mfsp']/tr[#{row}]/th
+                            [preceding::span[@id = '#{heading.attr('id')}']]")
+          gender_kind[heading.text.downcase.gsub(' ', '_')] = gender.nil? ? "invariable" : gender.text
+        end
+        row += 1
+      end
     end
+    gender_kind
   end
 end
 
 
 c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
-p c.crawl 'maison'
+p c.crawl 'journal'
 
