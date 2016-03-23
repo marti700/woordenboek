@@ -25,6 +25,7 @@ class Crawler
     @page = @search.submit
     extract_definitions_from_page with_examples
     #get_word_gender
+    #extract_alternate_forms
   end
 
   private
@@ -181,9 +182,68 @@ class Crawler
     end
     gender_kind
   end
+
+  def extract_alternate_forms
+    #There are words that are written diferent depending on it's gender or number
+    #this method returns a hash which contains an alternate form as key and the way it is written
+    #as value.
+    #
+    #This alternate forms are always in a table that with a class named 'flextable flextable-fr-mfsp'
+    #for the noms the key will mostly be the plural with the way in which the plural is written for
+    #the current word. For the adjetifs the mostratives and the other words in wich the writing changes
+    #depending of the gender the keys of the hash will be 'masculin_singulier', 'femenin_singulier',
+    #'Masculin_pluriel', femenin_pluriel, etc, the gender always after the number. if a key is not in the hash
+    #nil will be returned and this means that the word has not such denomination E.x if the masculin_pluriel
+    #of 'maison' is requested nil will be returned because maison is always femenin and does not vary with the gender
+    #the correct will be to request the pluriel which in this case will be one of keys of the hash the other one will
+    #be singulier which will have the value 'maison'.
+    #
+
+    row = 2
+    column = 1
+    alternate_forms = Hash.new
+    #this will loops works like traversing a matrix the program will enter the loops if the
+    #xpath query passed to the #at method is not nil
+    while !@page.at("//table[@class='flextable flextable-fr-mfsp']/tr[1]/th[#{column}]").nil? do
+      while !@page.at("//table[@class='flextable flextable-fr-mfsp']/tr[#{row}]").nil? do
+
+        #takes the gender from the table
+        key1 = @page.at("//table[@class='flextable flextable-fr-mfsp']/tr[#{row}]/th")
+        #takes the number from the table
+        key2 = @page.at("//table[@class='flextable flextable-fr-mfsp']/tr[1]/th[#{column}]")
+        #build the key if key1 is nil means that the gender is not present in the table
+        #in that case just the number will serve as key but if key1 is not null both the gender
+        #and the number will be used to build the ke
+        #and the number will be used to build the key.
+        key = key1.nil? ? key2.text : key1.text+'_'+key2.text
+
+        #gets the element that contains the value of the alternate form of this word
+        value_element = @page.at("//table[@class='flextable flextable-fr-mfsp']/tr[#{row}]/td[#{column}]")
+        #there are noms that has a aditional row without columns
+        #this code below takes care of those exceptions
+        break if value_element.nil?
+        #usually the alternate forms in the table has the pronunciation in the follwing pattern
+        #the value we are interested in a '\n' charactar and the pronunciation
+        #(actually it is more complex than that but that is the relevant stuff)
+        #so the regexp below takes the value we are interested in it says take all until the
+        #first '\n' value and ingnore the rest
+        value = /^(.*?)\n/.match value_element.text
+        if alternate_forms.has_key? key
+          row += 1
+          next
+        else
+          alternate_forms[key] = value.nil? ? value_element.text : value[1]
+        end
+      row += 1
+      end
+      column += 1
+      row = 2
+    end
+    alternate_forms
+  end
 end
 
 
 c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
-p c.crawl 'journal'
+p c.crawl 'celui'
 
