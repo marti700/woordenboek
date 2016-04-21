@@ -40,26 +40,19 @@ class Crawler
     definition_counter = 1
 
     valid_kind_headers.each do |heading|
+      #selects the ol that defines the word for the provided kind header
+      current_ol = @page.at("//ol[preceding::span[@id='#{heading.attr('id')}']]")
 
-      #the argument of the .at method is an xpath that queries for an specific
-      #definition li of an ol(all definitions all between <ol> tags) each
-      #iteration the definition_counter variable increases by one and this
-      #selects a different definition li from the <ol> tag as long as the .at
-      #method do not return nil(which means there are no more definitions for
-      #the current kind) the code inside the while loop will be executed
-      while @page.at("//ol/li[#{definition_counter}][preceding::span[@id='#{heading.attr('id')}']]") do
-        currently_selected_item = @page.at("//ol/li[#{definition_counter}][preceding::span[@id = '#{heading.attr('id')}']]")
-        #The li tags from the above xpath query also get the text of the
-        #examples of the the definitions. The definitions are separated from
-        #the example by one or more new line characters, the /^(.*?)\n/ regex
-        #takes the text that is before the first \n character.
+      current_ol.children.each do |child|
+        #skip children that just have "\n" as text
+        next if child.text == "\n"
         begin
-          definitions[definition_counter] = /^(.*?)\n/.match(currently_selected_item.text)[0]
-          examples[definition_counter] = extract_examples_from currently_selected_item if with_examples
+          definitions[definition_counter] = /^(.*?)\n/.match(child.text)[0]
+          examples[definition_counter] = extract_examples_from child if with_examples
 
         rescue NoMethodError #there are no examples in for this specific definition, so the \n charecter magic is not needed
-          definitions[definition_counter] = currently_selected_item.text
-          examples[definition_counter] = extract_examples_from currently_selected_item if with_examples
+          definitions[definition_counter] = child.text
+          examples[definition_counter] = extract_examples_from child if with_examples
         end
 
         definition_counter += 1 #increase definition_counter to select the next definition <li>
@@ -111,7 +104,7 @@ class Crawler
     #Les Prononciations, Etymologies et les References
     #sont pas besoin dans ce dictionnaire
 
-    @page.search("//h3/span[@class='mw-headline']/span[not(contains(.,'Références' )
+    @page.search("//h3/span[@class='mw-headline'][not(contains(.,'Références' )
                   or contains(.,'Prononciation') or contains(.,'Symbole')
                   or contains(.,'Étymologie') or contains(.,'Voir aussi')
                   or contains(.,'Anagrammes'))]
@@ -245,5 +238,4 @@ end
 
 
 c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
-p c.crawl 'celui'
-
+p c.crawl 'ce'
