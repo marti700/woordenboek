@@ -1,8 +1,7 @@
 require 'mechanize'
 
 class Crawler
-  attr_reader :mech_agent, :page
-  attr_accessor :search
+  attr_reader :mech_agent, :page, :search
   def initialize an_wiktionary_url
     #instantiate a mechanize object
     @mech_agent = Mechanize.new
@@ -18,15 +17,14 @@ class Crawler
     #The with_examples argument especifies if examples from the
     #@page should be extracted too.
 
-    #sets the value of the search form value property (which name is search)
-    #to the word paset to the method
-    @search.search = a_word
+    #@search.search = a_word
     #submit the form to get the new Page
-    @page = @search.submit
+    #@page = @search.submit
+    search a_word
     extract_definitions_from_page with_examples
     #get_word_gender
     #extract_alternate_forms
-    kinds
+    #kinds
   end
 
   def extract_definitions_from_page with_examples = false
@@ -242,6 +240,13 @@ class Crawler
       kinds.push(header.text.downcase.gsub(' ','_'))
     end
     kinds
+  end
+
+  def search a_word
+    #sets the value of the search form value property (which name is search)
+    #to a_word
+    @search.search = a_word
+    @page = @search.submit #submit the form and equals the response to @page
   end
 end
 
