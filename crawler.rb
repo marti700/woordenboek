@@ -26,9 +26,9 @@ class Crawler
     extract_definitions_from_page with_examples
     #get_word_gender
     #extract_alternate_forms
+    kinds
   end
 
-  private
   def extract_definitions_from_page with_examples = false
     #Extracts definitions from the @page variable
     #The with_examples argument especifies if examples from
@@ -233,6 +233,15 @@ class Crawler
       row = 2
     end
     alternate_forms
+  end
+
+  def kinds
+    #return a list of kinds for the word being defined in the current page
+    kinds = Array.new
+    valid_kind_headers.each do |header|
+      kinds.push(header.text.downcase.gsub(' ','_'))
+    end
+    kinds
   end
 end
 
