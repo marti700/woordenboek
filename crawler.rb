@@ -151,7 +151,6 @@ class Crawler
                         or contains(.,'Nom') or contains(.,'Adjectif')]
                         and preceding::span[@id='#{heading.attr('id')}']]")
       gender = /(masculin|féminin)/.match(p_text)
-      p gender
       if !p_text.nil? && !gender.nil?
         gender_kind[heading.text.downcase.gsub(' ', '_')] = gender[0]
         next #no need to search the table if the gender was taken from the <p> tag
@@ -251,5 +250,5 @@ class Crawler
 end
 
 
-c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
-p c.crawl 'ce'
+#c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
+#p c.crawl 'ce'
