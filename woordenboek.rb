@@ -1,5 +1,6 @@
 require_relative 'crawler'
 require_relative 'word'
+require 'json'
 
 class Woordenboek
   attr_accessor :crawler, :dic
@@ -26,18 +27,25 @@ class Woordenboek
 
     File.open(a_path, "r") do |f|
       f.each_line do |line|
-        @dic[line.chomp] = define(line.chomp, with_examples)
+        @dic[line.chomp] = define(line.chomp, with_examples).to_h
       end
     end
     @dic
+  end
+
+  def save_as_json path = './'
+    File.open("#{path}test.json", "w") do |f|
+      f.write(@dic.to_json)
+    end
   end
 end
 
 dic = Woordenboek.new
 #p dic.define 'ce'
-#
 
 dic.define_from("./test.txt").each do |key,value|
-  puts(key +"-----------> " + p(value).to_s)
+  puts(key +"-----------> " + value.to_s)
   #puts key
 end
+
+dic.save_as_json

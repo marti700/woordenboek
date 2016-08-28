@@ -9,4 +9,10 @@ class Word
   def initialize name
     @name = name
   end
+
+  def to_h
+    #returns a Hash representing this object
+    {@name.to_sym => {kinds: @kinds, definition: @definition, gender: @gender, alternate_forms: @alternate_forms}}
+  end
 end
+
