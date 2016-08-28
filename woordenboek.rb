@@ -2,9 +2,10 @@ require_relative 'crawler'
 require_relative 'word'
 
 class Woordenboek
-  attr_accessor :crawler
+  attr_accessor :crawler, :dic
   def initialize
     @crawler = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
+    @dic = Hash.new
   end
 
   def define a_word, with_examples = false
@@ -22,9 +23,21 @@ class Woordenboek
     #creates a dictionary taking the words from a text file
     #if with_example is true each word in the text file will be defined with
     #examples
+
+    File.open(a_path, "r") do |f|
+      f.each_line do |line|
+        @dic[line.chomp] = define(line.chomp, with_examples)
+      end
+    end
+    @dic
   end
 end
 
 dic = Woordenboek.new
-p dic.define 'ce'
+#p dic.define 'ce'
+#
 
+dic.define_from("./test.txt").each do |key,value|
+  puts(key +"-----------> " + p(value).to_s)
+  #puts key
+end
