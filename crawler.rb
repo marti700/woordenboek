@@ -1,4 +1,5 @@
 require 'mechanize'
+require 'pry'
 
 class Crawler
   attr_reader :mech_agent, :page, :search
@@ -40,9 +41,11 @@ class Crawler
     valid_kind_headers.each do |heading|
       #selects the ol that defines the word for the provided kind header
       current_ol = @page.at("//ol[preceding::span[@id='#{heading.attr('id')}']]")
+      #binding.pry
 
       current_ol.children.each do |child|
         #skip children that just have "\n" as text
+        #binding.pry
         next if child.text == "\n"
         begin
           definitions[definition_counter] = /^(.*?)\n/.match(child.text)[0]
@@ -100,12 +103,12 @@ class Crawler
     #and Etymologie.
     #
     #Les Prononciations, Etymologies et les References
-    #sont pas besoin dans ce dictionnaire
+    #sont pas necessaires dans ce dictionnaire
 
     @page.search("//h3/span[@class='mw-headline'][not(contains(.,'Références' )
                   or contains(.,'Prononciation') or contains(.,'Symbole')
                   or contains(.,'Étymologie') or contains(.,'Voir aussi')
-                  or contains(.,'Anagrammes'))]
+                  or contains(.,'Anagrammes') or contains(.,'Paronymes'))]
                   [not(preceding::h2/span[@id = '#{limit_id}'])]")
   end
 
@@ -250,5 +253,5 @@ class Crawler
 end
 
 
-#c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
-#p c.crawl 'ce'
+c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
+p c.crawl 'accommoder'
