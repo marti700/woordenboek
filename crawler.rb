@@ -108,7 +108,8 @@ class Crawler
     @page.search("//h3/span[@class='mw-headline'][not(contains(.,'Références' )
                   or contains(.,'Prononciation') or contains(.,'Symbole')
                   or contains(.,'Étymologie') or contains(.,'Voir aussi')
-                  or contains(.,'Anagrammes') or contains(.,'Paronymes'))]
+                  or contains(.,'Anagrammes') or contains(.,'Paronymes')
+                  or contains(.,'Traductions'))]
                   [not(preceding::h2/span[@id = '#{limit_id}'])]")
   end
 
@@ -254,4 +255,4 @@ end
 
 
 c = Crawler.new 'https://fr.wiktionary.org/wiki/Wiktionnaire:Page_d%E2%80%99accueil'
-p c.crawl 'accommoder'
+p c.crawl 'adéquatement'
